@@ -1,0 +1,40 @@
+Data Intensive Science	Distributed File Systems	Google
+Clouds	Cloud Storage	Google
+Data Centers	Web services	Google
+Clusters	Mapreduce	Hadoop
+Simulation on Supercomputers	Parallel Programming/Mapreduce	Hadoop
+Data Intensive Science	Mapreduce	Hadoop
+Clusters	Parallel Programming	Hadoop
+Data Intensive Science	Distributed File Systems	Hadoop
+Data Intensive Science	Consistency and Replication	BigTable
+Data Intensive Science	Fault tolerance	BigTable
+Data Intensive Science	Distributed	BigTable
+Clouds	cloud platform	BigTable
+Clusters	Mapreduce	BigTable
+Clouds	Web services	HubZero
+Cluster	Infrastructure as a Service	Nimbus
+Cluster	Hypervisors	Nimbus
+Cluster	cloud platform	Nimbus
+Cluster	PigLatin	Hadoop
+Clouds	Hypervisors	Xen
+Peer to Peer Systems	Distributed Hashtables	Twister
+Grids	OGSA	UDDI
+Clusters	Web Services	Amazon
+Clusters	Distributed File Systems	Amazon
+Data Centers	cloud storage	Amazon
+Grids	OGSA	Globus
+IOT	Cloud Platform	Facebook
+IOT	Cloud Platform	Google
+IOT	Cloud Platform	Amazon
+Data Intensive Science	Parallel Programming	Blast
+Clusters	Distributed File Systems	Google
+Clusters	Distributed File Systems	Chubby
+Clusters	Message Oriented Middleware	MPI
+Clusters	Communication	MPI
+Clusters	Scheduling	Condor
+Clusters/Grids/Clouds	Workflow	Pegasus
+Clusters	Mapreduce	Facebook
+Data Centers	Synchronization	Facebook
+Clouds	cloud storage	BigTable
+Clusters/Grids/Clouds	Check Pointing	Pegasus
+Clouds	SOA	Amazon
