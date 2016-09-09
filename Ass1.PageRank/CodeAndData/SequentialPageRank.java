@@ -14,6 +14,8 @@ public class SequentialPageRank {
 	private int iterations = 10;
 	// damping factor
 	private double dampingFactor = 0.85;
+	
+	// 'size' makes it easier, but we need to make sure the code is dynamic
 	// number of URLs
 	private int size = 0;
 	// calculating rank values
@@ -48,7 +50,54 @@ public class SequentialPageRank {
 	 *             if an error occurs
 	 */
 	public void loadInput() throws IOException {
-		
+		System.out.println("\nRead " + inputFile);
+		try {
+			// BufferedReader br = new BufferedReader(new
+			// FileReader(inputFile));
+			String line = "";
+			// int inputCharValue;
+			// char inputChar;
+			// boolean firstChar = true;
+
+			// 'key' is not necessary, but just for better readability
+			int key = 0;
+			ArrayList<Integer> outLinks;
+
+			// assuming there's no missing key
+			Scanner in = new Scanner(new FileReader(inputFile));
+			String[] lineStringArray;
+
+			while (in.hasNextLine()) {
+				outLinks = new ArrayList<Integer>();
+				line = in.nextLine();
+				// To-do: implement split function to avoid the intermediate
+				lineStringArray = line.split(" ");
+
+				// handle non int exception
+				key = Integer.parseInt(lineStringArray[0]);
+				if (lineStringArray.length > 0) {
+					for (int i = 1; i < lineStringArray.length; i++) {
+						outLinks.add(Integer.parseInt(lineStringArray[i]));
+					}
+				} else {
+					// To-do: dangling pages
+					continue;
+				}
+				System.out.print("key:" + key + " urls: ");
+				for (int i = 0; i < outLinks.size(); i++) {
+					System.out.print(outLinks.get(i) + " ");
+				}
+				System.out.println();
+				adjList.put(key, outLinks);
+			}
+			in.close();
+
+			displayAdjList();
+
+		} catch (IOException e) {
+			System.out.println("Exception " + e + "\n\nStack Trace:");
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -70,23 +119,34 @@ public class SequentialPageRank {
 	public void printValues() throws IOException {
 
 	}
-	
+
 	private void display() {
-		System.out.println("input: "+ inputFile);
-		System.out.println("output: "+ outputFile);
-		System.out.println("iterations: "+ iterations);
-		System.out.println("dampingFactor: "+ dampingFactor);
+		System.out.println("input: " + inputFile);
+		System.out.println("output: " + outputFile);
+		System.out.println("iterations: " + iterations);
+		System.out.println("dampingFactor: " + dampingFactor);
+	}
+
+	private void displayAdjList() {
+		System.out.println("\nAdj:");
+		for (int i = 0; i < adjList.size(); i++) {
+			System.out.print("key: " + i + ", " + adjList.get(i).size() + " url(s): ");
+			for (int j = 0; j < adjList.get(i).size(); j++) {
+				System.out.print(adjList.get(i).get(j) + " ");
+			}
+			System.out.println();
+		}
 	}
 
 	public static void main(String[] args) throws IOException {
 		SequentialPageRank sequentialPR = new SequentialPageRank();
-		
+
 		sequentialPR.parseArgs(args);
 		sequentialPR.display();
-		
+
 		sequentialPR.loadInput();
 		sequentialPR.calculatePageRank();
 		sequentialPR.printValues();
 	}
-	
+
 }
