@@ -1,8 +1,6 @@
 import java.io.*;
 import java.util.*;
 
-import sun.awt.im.InputMethodJFrame;
-
 public class SequentialPageRank {
 	// adjacency matrix read from file
 	private HashMap<Integer, ArrayList<Integer>> adjList = new HashMap<Integer, ArrayList<Integer>>();
@@ -106,7 +104,37 @@ public class SequentialPageRank {
 	 * keep the intermediate page rank values in a hash table.
 	 */
 	public void calculatePageRank() {
-
+//		private HashMap<Integer, ArrayList<Integer>> adjList = new HashMap<Integer, ArrayList<Integer>>();
+//		private HashMap<Integer, Double> rankValues = new HashMap<Integer, Double>();
+		HashMap<Integer, Double> nextRankValues = new HashMap<Integer, Double>();
+		
+		//initialize rank values
+		double avg = 1.0/size;
+		for(int i = 0; i <= size; i++){
+			rankValues.put(i, avg);
+//			nextRankValues.put(i, avg);
+		}
+		double constantFactor = (1-dampingFactor)/size;
+		double myRankContribution = 0.0;
+//		double rankContribution = 0.0;
+		ArrayList<Integer> outLinks;
+		
+		while(iterations-- > 0){
+			for(int i = 0; i <= size; i++){
+				outLinks = adjList.get(i);
+				// My contribution towards each page
+				myRankContribution = rankValues.get(i) / outLinks.size();
+				
+				for(int page: outLinks){
+//					double temp = myRank + nextRankValues.get(page);
+					nextRankValues.replace(page, myRankContribution + nextRankValues.get(page));
+				}
+			}
+			for(int i = 0; i <= size; i++){
+				double rank = constantFactor + dampingFactor * rankValues.get(i);
+				rankValues.replace(i, rank);
+			}
+		}
 	}
 
 	/**
