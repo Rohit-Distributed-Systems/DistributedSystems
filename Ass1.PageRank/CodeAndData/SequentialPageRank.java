@@ -14,8 +14,7 @@ public class SequentialPageRank {
 	private int iterations = 10;
 	// damping factor
 	private double dampingFactor = 0.85;
-	
-	// 'size' makes it easier, but we need to make sure the code is dynamic
+
 	// number of URLs
 	private int size = 0;
 	// calculating rank values
@@ -52,12 +51,7 @@ public class SequentialPageRank {
 	public void loadInput() throws IOException {
 		System.out.println("\nRead " + inputFile);
 		try {
-			// BufferedReader br = new BufferedReader(new
-			// FileReader(inputFile));
 			String line = "";
-			// int inputCharValue;
-			// char inputChar;
-			// boolean firstChar = true;
 
 			// 'key' is not necessary, but just for better readability
 			int key = 0;
@@ -66,6 +60,7 @@ public class SequentialPageRank {
 			// assuming there's no missing key
 			Scanner in = new Scanner(new FileReader(inputFile));
 			String[] lineStringArray;
+			ArrayList<Integer> outLinksForDanglingPages = new ArrayList<Integer>();
 
 			while (in.hasNextLine()) {
 				outLinks = new ArrayList<Integer>();
@@ -75,22 +70,28 @@ public class SequentialPageRank {
 
 				// handle non int exception
 				key = Integer.parseInt(lineStringArray[0]);
+				outLinksForDanglingPages.add(key);
 				if (lineStringArray.length > 0) {
 					for (int i = 1; i < lineStringArray.length; i++) {
 						outLinks.add(Integer.parseInt(lineStringArray[i]));
 					}
 				} else {
-					// To-do: dangling pages
+					// Dangling page: handled after the loop
 					continue;
 				}
-				System.out.print("key:" + key + " urls: ");
-				for (int i = 0; i < outLinks.size(); i++) {
-					System.out.print(outLinks.get(i) + " ");
-				}
-				System.out.println();
+
 				adjList.put(key, outLinks);
 			}
 			in.close();
+			size = key;
+
+//			displayAdjList();
+
+			for (int i = 0; i <= size; i++) {
+				if (adjList.get(i).size() == 0) {
+					adjList.replace(i, outLinksForDanglingPages);
+				}
+			}
 
 			displayAdjList();
 
