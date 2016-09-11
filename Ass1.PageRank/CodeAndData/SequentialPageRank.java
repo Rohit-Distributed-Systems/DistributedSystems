@@ -47,7 +47,6 @@ public class SequentialPageRank {
 	 *             if an error occurs
 	 */
 	public void loadInput() throws IOException {
-		System.out.println("\nRead " + inputFile);
 		try {
 			String line = "";
 
@@ -83,7 +82,7 @@ public class SequentialPageRank {
 			in.close();
 			size = key;
 
-//			displayAdjList();
+			// displayAdjList();
 
 			for (int i = 0; i <= size; i++) {
 				if (adjList.get(i).size() == 0) {
@@ -104,36 +103,34 @@ public class SequentialPageRank {
 	 * keep the intermediate page rank values in a hash table.
 	 */
 	public void calculatePageRank() {
-//		private HashMap<Integer, ArrayList<Integer>> adjList = new HashMap<Integer, ArrayList<Integer>>();
-//		private HashMap<Integer, Double> rankValues = new HashMap<Integer, Double>();
 		HashMap<Integer, Double> nextRankValues = new HashMap<Integer, Double>();
-		
-		//initialize rank values
-		double avg = 1.0/size;
-		for(int i = 0; i <= size; i++){
+
+		// initialize rank values
+		double avg = 1.0 / size;
+		for (int i = 0; i <= size; i++) {
 			rankValues.put(i, avg);
-//			nextRankValues.put(i, avg);
 		}
-		double constantFactor = (1-dampingFactor)/size;
+		double constantFactor = (1 - dampingFactor) / size;
 		double myRankContribution = 0.0;
-//		double rankContribution = 0.0;
 		ArrayList<Integer> outLinks;
-		
-		while(iterations-- > 0){
-			for(int i = 0; i <= size; i++){
+
+		while (iterations-- > 0) {
+			nextRankValues = (HashMap<Integer, Double>) rankValues.clone();
+			for (int i = 0; i <= size; i++) {
 				outLinks = adjList.get(i);
 				// My contribution towards each page
 				myRankContribution = rankValues.get(i) / outLinks.size();
-				
-				for(int page: outLinks){
-//					double temp = myRank + nextRankValues.get(page);
+
+				for (int page : outLinks) {
 					nextRankValues.replace(page, myRankContribution + nextRankValues.get(page));
 				}
 			}
-			for(int i = 0; i <= size; i++){
+			for (int i = 0; i <= size; i++) {
 				double rank = constantFactor + dampingFactor * rankValues.get(i);
 				rankValues.replace(i, rank);
 			}
+			rankValues = nextRankValues;
+
 		}
 	}
 
@@ -146,7 +143,24 @@ public class SequentialPageRank {
 	 *             if an error occurs
 	 */
 	public void printValues() throws IOException {
+		System.out.println("\nRanks:");
+		for (int i = 0; i < size; i++) {
+			System.out.println(rankValues.get(i));
+		}
 
+		List<Object> sortedRankValues = new ArrayList<Object>(rankValues.entrySet());
+
+		Collections.sort(sortedRankValues, new Comparator<Object>() {
+			public int compare(Object obj1, Object obj2) {
+				return ((Comparable) ((Map.Entry) (obj2)).getValue()).compareTo(((Map.Entry) (obj1)).getValue());
+			}
+		});
+		System.out.println(sortedRankValues);
+
+		System.out.println("\nRanks:");
+		for (int i = 0; i < size; i++) {
+			System.out.println("Page: " + i + " | Rank: " + sortedRankValues.get(i));
+		}
 	}
 
 	private void display() {
@@ -157,7 +171,7 @@ public class SequentialPageRank {
 	}
 
 	private void displayAdjList() {
-		System.out.println("\nAdj:");
+		// System.out.println("\nAdj:");
 		for (int i = 0; i < adjList.size(); i++) {
 			System.out.print("key: " + i + ", " + adjList.get(i).size() + " url(s): ");
 			for (int j = 0; j < adjList.get(i).size(); j++) {
@@ -171,7 +185,7 @@ public class SequentialPageRank {
 		SequentialPageRank sequentialPR = new SequentialPageRank();
 
 		sequentialPR.parseArgs(args);
-		sequentialPR.display();
+		// sequentialPR.display();
 
 		sequentialPR.loadInput();
 		sequentialPR.calculatePageRank();
