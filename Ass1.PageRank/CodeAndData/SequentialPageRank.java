@@ -104,29 +104,54 @@ public class SequentialPageRank {
 	 */
 	public void calculatePageRank() {
 		HashMap<Integer, Double> nextRankValues = new HashMap<Integer, Double>();
+		HashMap<Integer, Double> init = new HashMap<Integer, Double>();
 
 		// initialize rank values
 		double avg = 1.0 / size;
 		for (int i = 0; i <= size; i++) {
 			rankValues.put(i, avg);
+			init.put(i, 0.0);
 		}
+		// HashMap<Integer, Double> init = (HashMap<Integer, Double>)
+		// rankValues.clone();
 		double constantFactor = (1 - dampingFactor) / size;
 		double myRankContribution = 0.0;
 		ArrayList<Integer> outLinks;
 
+		// double contribution[] = new double[size];
+		// while (iterations-- > 0) {
+		// System.out.println("\niterations:" + iterations);
+		// for (int i = 0; i <= size; i++) {
+		// contribution[i] = rankValues.get(i) / adjList.get(i).size();
+		// System.out.print(i + "'s contri is " + contribution[i]);
+		// }
+		//
+		// nextRankValues = (HashMap<Integer, Double>) rankValues.clone();
+		//
+		// for (int i = 0; i <= size; i++) {
+		// double rank = rankValues.get(i);
+		// for(int j = 0; j < size; j++){
+		// if(rankValues.get(j).)
+		// }
+		// }
+		//
+		//
+		// }
+
 		while (iterations-- > 0) {
 			System.out.println("\niterations:" + iterations);
-			nextRankValues = (HashMap<Integer, Double>) rankValues.clone();
+			nextRankValues = (HashMap<Integer, Double>) init.clone();
+
 			for (int i = 0; i <= size; i++) {
 				outLinks = adjList.get(i);
 				// My contribution towards each page
 				myRankContribution = rankValues.get(i) / outLinks.size();
-				System.out.print(i + "'s contri is " + myRankContribution + " to ");
+//				System.out.print(i + "'s contri is " + myRankContribution + " to ");
 				for (int page : outLinks) {
-					System.out.print(page + " ");
+//					System.out.print(page + " ");
 					nextRankValues.replace(page, myRankContribution + nextRankValues.get(page));
 				}
-				System.out.println();
+//				System.out.println();
 			}
 
 			try {
@@ -147,6 +172,7 @@ public class SequentialPageRank {
 			rankValues = nextRankValues;
 
 		}
+
 	}
 
 	private double rankSum(HashMap<Integer, Double> nextRankValues) {
