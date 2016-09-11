@@ -115,23 +115,56 @@ public class SequentialPageRank {
 		ArrayList<Integer> outLinks;
 
 		while (iterations-- > 0) {
+			System.out.println("\niterations:" + iterations);
 			nextRankValues = (HashMap<Integer, Double>) rankValues.clone();
 			for (int i = 0; i <= size; i++) {
 				outLinks = adjList.get(i);
 				// My contribution towards each page
 				myRankContribution = rankValues.get(i) / outLinks.size();
-
+				System.out.print(i + "'s contri is " + myRankContribution + " to ");
 				for (int page : outLinks) {
+					System.out.print(page + " ");
 					nextRankValues.replace(page, myRankContribution + nextRankValues.get(page));
 				}
+				System.out.println();
+			}
+
+			try {
+				printValues();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 			for (int i = 0; i <= size; i++) {
-				double rank = constantFactor + dampingFactor * rankValues.get(i);
-				rankValues.replace(i, rank);
+				double rank = constantFactor + dampingFactor * nextRankValues.get(i);
+				nextRankValues.replace(i, rank);
+			}
+			System.out.println("rankSum = " + rankSum(nextRankValues));
+
+			if (hasConverged(nextRankValues)) {
+				System.out.println("Converged");
+				break;
 			}
 			rankValues = nextRankValues;
 
 		}
+	}
+
+	private double rankSum(HashMap<Integer, Double> nextRankValues) {
+		double sum = 0;
+		for (int i = 0; i < size; i++) {
+			sum += nextRankValues.get(i);
+		}
+		return sum;
+	}
+
+	private boolean hasConverged(HashMap<Integer, Double> nextRankValues) {
+		double euclideanDistance = 0;
+		for (int i = 0; i < size; i++) {
+			euclideanDistance += Math.pow(nextRankValues.get(i) - rankValues.get(i), 2);
+		}
+		euclideanDistance = Math.sqrt(euclideanDistance);
+		System.out.println("euclideanDistance = " + euclideanDistance);
+		return false;
 	}
 
 	/**
@@ -143,11 +176,6 @@ public class SequentialPageRank {
 	 *             if an error occurs
 	 */
 	public void printValues() throws IOException {
-		System.out.println("\nRanks:");
-		for (int i = 0; i < size; i++) {
-			System.out.println(rankValues.get(i));
-		}
-
 		List<Object> sortedRankValues = new ArrayList<Object>(rankValues.entrySet());
 
 		Collections.sort(sortedRankValues, new Comparator<Object>() {
@@ -155,12 +183,15 @@ public class SequentialPageRank {
 				return ((Comparable) ((Map.Entry) (obj2)).getValue()).compareTo(((Map.Entry) (obj1)).getValue());
 			}
 		});
-		System.out.println(sortedRankValues);
 
-		System.out.println("\nRanks:");
-		for (int i = 0; i < size; i++) {
-			System.out.println("Page: " + i + " | Rank: " + sortedRankValues.get(i));
+		int count = 0;
+		for (Object o : sortedRankValues) {
+			if (count++ > 9) {
+				break;
+			}
+			System.out.println(o);
 		}
+
 	}
 
 	private void display() {
@@ -189,6 +220,8 @@ public class SequentialPageRank {
 
 		sequentialPR.loadInput();
 		sequentialPR.calculatePageRank();
+
+		System.out.println("\nSorted Ranks:");
 		sequentialPR.printValues();
 	}
 
