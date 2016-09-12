@@ -18,6 +18,9 @@ public class SequentialPageRank {
 	// calculating rank values
 	private HashMap<Integer, Double> rankValues = new HashMap<Integer, Double>();
 
+	// Convergence Threshold
+	private final double CONVERGENCE_THRESHOLD = 0.0001;
+
 	/**
 	 * Parse the command line arguments and update the instance variables.
 	 * Command line arguments are of the form <input_file_name>
@@ -54,7 +57,6 @@ public class SequentialPageRank {
 			int key = 0;
 			ArrayList<Integer> outLinks;
 
-			// assuming there's no missing key
 			Scanner in = new Scanner(new FileReader(inputFile));
 			String[] lineStringArray;
 			ArrayList<Integer> outLinksForDanglingPages = new ArrayList<Integer>();
@@ -62,10 +64,8 @@ public class SequentialPageRank {
 			while (in.hasNextLine()) {
 				outLinks = new ArrayList<Integer>();
 				line = in.nextLine();
-				// To-do: implement split function to avoid the intermediate
 				lineStringArray = line.split(" ");
 
-				// handle non int exception
 				key = Integer.parseInt(lineStringArray[0]);
 				outLinksForDanglingPages.add(key);
 				if (lineStringArray.length > 0) {
@@ -82,21 +82,21 @@ public class SequentialPageRank {
 			in.close();
 			size = key;
 
-			// displayAdjList();
-
+			// Dangling Nodes
 			for (int i = 0; i <= size; i++) {
 				if (adjList.get(i).size() == 0) {
 					adjList.replace(i, outLinksForDanglingPages);
 				}
 			}
 
-			displayAdjList();
+			// displayAdjList();
 
 		} catch (IOException e) {
 			System.out.println("Exception " + e + "\n\nStack Trace:");
 			e.printStackTrace();
 		}
 	}
+
 
 	/**
 	 * Do fixed number of iterations and calculate the page rank values. You may
@@ -106,67 +106,38 @@ public class SequentialPageRank {
 		HashMap<Integer, Double> nextRankValues = new HashMap<Integer, Double>();
 		HashMap<Integer, Double> init = new HashMap<Integer, Double>();
 
-		// initialize rank values
+		// Initialize rank values
 		double avg = 1.0 / size;
 		for (int i = 0; i <= size; i++) {
 			rankValues.put(i, avg);
 			init.put(i, 0.0);
 		}
-		// HashMap<Integer, Double> init = (HashMap<Integer, Double>)
-		// rankValues.clone();
+
 		double constantFactor = (1 - dampingFactor) / size;
 		double myRankContribution = 0.0;
 		ArrayList<Integer> outLinks;
 
-		// double contribution[] = new double[size];
-		// while (iterations-- > 0) {
-		// System.out.println("\niterations:" + iterations);
-		// for (int i = 0; i <= size; i++) {
-		// contribution[i] = rankValues.get(i) / adjList.get(i).size();
-		// System.out.print(i + "'s contri is " + contribution[i]);
-		// }
-		//
-		// nextRankValues = (HashMap<Integer, Double>) rankValues.clone();
-		//
-		// for (int i = 0; i <= size; i++) {
-		// double rank = rankValues.get(i);
-		// for(int j = 0; j < size; j++){
-		// if(rankValues.get(j).)
-		// }
-		// }
-		//
-		//
-		// }
-
-		while (iterations-- > 0) {
-			System.out.println("\niterations:" + iterations);
+		int iterNumber = 0;
+		while (iterNumber < iterations) {
 			nextRankValues = (HashMap<Integer, Double>) init.clone();
 
 			for (int i = 0; i <= size; i++) {
 				outLinks = adjList.get(i);
 				// My contribution towards each page
 				myRankContribution = rankValues.get(i) / outLinks.size();
-//				System.out.print(i + "'s contri is " + myRankContribution + " to ");
+
 				for (int page : outLinks) {
-//					System.out.print(page + " ");
 					nextRankValues.replace(page, myRankContribution + nextRankValues.get(page));
 				}
-//				System.out.println();
 			}
 
-			try {
-				printValues();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 			for (int i = 0; i <= size; i++) {
 				double rank = constantFactor + dampingFactor * nextRankValues.get(i);
 				nextRankValues.replace(i, rank);
 			}
-			System.out.println("rankSum = " + rankSum(nextRankValues));
+			// System.out.println("rankSum = " + rankSum(nextRankValues));
 
 			if (hasConverged(nextRankValues)) {
-				System.out.println("Converged");
 				break;
 			}
 			rankValues = nextRankValues;
@@ -175,6 +146,7 @@ public class SequentialPageRank {
 
 	}
 
+	// To verify that sum of ranks is 1
 	private double rankSum(HashMap<Integer, Double> nextRankValues) {
 		double sum = 0;
 		for (int i = 0; i < size; i++) {
@@ -189,7 +161,10 @@ public class SequentialPageRank {
 			euclideanDistance += Math.pow(nextRankValues.get(i) - rankValues.get(i), 2);
 		}
 		euclideanDistance = Math.sqrt(euclideanDistance);
-		System.out.println("euclideanDistance = " + euclideanDistance);
+		// System.out.println("euclideanDistance = " + euclideanDistance);
+		if (euclideanDistance < CONVERGENCE_THRESHOLD) {
+			return true;
+		}
 		return false;
 	}
 
@@ -210,13 +185,29 @@ public class SequentialPageRank {
 			}
 		});
 
+		StringBuffer outString = new StringBuffer();
+		// System.out.println("Number of Iteration = " + iterations);
+		outString.append("Number of Iteration = " + iterations + "\n");
 		int count = 0;
 		for (Object o : sortedRankValues) {
 			if (count++ > 9) {
 				break;
 			}
-			System.out.println(o);
+
+			outString.append("Page: " + o + "\n");
 		}
+
+		// Write to outPutFile
+		File fileHandle = new File(outputFile);
+		if (!fileHandle.exists()) {
+			fileHandle.createNewFile();
+		}
+		BufferedWriter bw = new BufferedWriter(new FileWriter(fileHandle.getAbsoluteFile()));
+		bw.write(outString.toString());
+		bw.close();
+
+		// If I want to display on the console
+//		System.out.println(outString);
 
 	}
 
@@ -228,7 +219,7 @@ public class SequentialPageRank {
 	}
 
 	private void displayAdjList() {
-		// System.out.println("\nAdj:");
+		 System.out.println("\nAdj:");
 		for (int i = 0; i < adjList.size(); i++) {
 			System.out.print("key: " + i + ", " + adjList.get(i).size() + " url(s): ");
 			for (int j = 0; j < adjList.get(i).size(); j++) {
@@ -239,6 +230,7 @@ public class SequentialPageRank {
 	}
 
 	public static void main(String[] args) throws IOException {
+		long d1 = new Date().getTime();
 		SequentialPageRank sequentialPR = new SequentialPageRank();
 
 		sequentialPR.parseArgs(args);
@@ -247,8 +239,10 @@ public class SequentialPageRank {
 		sequentialPR.loadInput();
 		sequentialPR.calculatePageRank();
 
-		System.out.println("\nSorted Ranks:");
 		sequentialPR.printValues();
+		long d2 = new Date().getTime();
+
+		System.out.println("Time taken = " + (d2 - d1) + "ms");
 	}
 
 }
