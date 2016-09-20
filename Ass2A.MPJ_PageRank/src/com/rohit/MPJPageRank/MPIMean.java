@@ -1,3 +1,5 @@
+package com.rohit.MPJPageRank;
+
 import mpi.MPI;
 
 public class MPIMean {
