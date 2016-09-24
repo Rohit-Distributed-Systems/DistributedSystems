@@ -2,7 +2,7 @@ package com.rohit.MPJPageRank;
 
 import java.io.*;
 import java.util.*;
-import mpi.*;
+import mpi.MPI;
 
 public class MPJPageRankMain {
 
@@ -22,7 +22,6 @@ public class MPJPageRankMain {
 	// calculating rank values
 	private HashMap<Integer, Double> rankValues = new HashMap<Integer, Double>();
 
-	
 	public void parseArgs(String[] args) {
 		inputFile = args[0];
 		outputFile = args[1];
@@ -141,26 +140,25 @@ public class MPJPageRankMain {
 		}
 	}
 
-	public void calculatePageRankUsingMPJ(String[] args) {
-		MPI.Init(args);
+	public static void main(String[] args) throws IOException {
+		// Read command line args along with MPI initiation
+		String inputArgs[] = MPI.Init(args);
 		int rank = MPI.COMM_WORLD.Rank();
 		int size = MPI.COMM_WORLD.Size();
 		System.out.println("Process " + rank + " of " + size + " processes");
 
+		// decide what u want only in rank 0 n what in all nodes
+		if (rank == 0) {
+			MPJPageRankMain mpjPR = new MPJPageRankMain();
+			mpjPR.parseArgs(inputArgs);
+			mpjPR.display();
+			mpjPR.loadInput();
+//			mpjPR.calculatePageRank();
+//			mpjPR.printValues();
+		}
+
 		MPI.Finalize();
-	}
-	public static void main(String[] args) throws IOException {
-		MPJPageRankMain mpjPR = new MPJPageRankMain();
-//		mpjPR.parseArgs(args);
-//		mpjPR.display();
-//
-//		mpjPR.loadInput();
-//		mpjPR.calculatePageRank();
-//		mpjPR.calculatePageRankUsingMPJ(args);
-//		mpjPR.printValues();
-		
-		
-		
+
 	}
 
 }
