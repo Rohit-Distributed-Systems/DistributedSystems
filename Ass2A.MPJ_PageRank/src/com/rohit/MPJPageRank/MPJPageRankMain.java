@@ -1,7 +1,11 @@
 package com.rohit.MPJPageRank;
 
-import java.io.*;
-import java.util.*;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Scanner;
+
 import mpi.MPI;
 
 public class MPJPageRankMain {
@@ -30,7 +34,7 @@ public class MPJPageRankMain {
 	}
 
 	// Read the input from the file and populate the adjacency matrix
-	public void loadInput() throws IOException {
+	public int loadInput(int rank) throws IOException {
 		System.out.println("\nRead " + inputFile);
 		try {
 			String line = "";
@@ -48,7 +52,6 @@ public class MPJPageRankMain {
 				line = in.nextLine();
 				lineStringArray = line.split(" ");
 
-				// handle non int exception
 				key = Integer.parseInt(lineStringArray[0]);
 				outLinksForDanglingPages.add(key);
 				if (lineStringArray.length > 0) {
@@ -63,22 +66,23 @@ public class MPJPageRankMain {
 				adjList.put(key, outLinks);
 			}
 			in.close();
-			size = key;
+			this.size = key;
 
-			// displayAdjList();
+			// displayAdjList(rank);
 
-			for (int i = 0; i <= size; i++) {
+			for (int i = 0; i <= this.size; i++) {
 				if (adjList.get(i).size() == 0) {
 					adjList.replace(i, outLinksForDanglingPages);
 				}
 			}
 
-			displayAdjList();
+			// displayAdjList(rank);
 
 		} catch (IOException e) {
 			System.out.println("Exception " + e + "\n\nStack Trace:");
 			e.printStackTrace();
 		}
+		return this.size;
 	}
 
 	public void calculatePageRank() {
@@ -129,8 +133,8 @@ public class MPJPageRankMain {
 		System.out.println("dampingFactor: " + dampingFactor);
 	}
 
-	private void displayAdjList() {
-		System.out.println("\nAdj:");
+	private void displayAdjList(int rank) {
+		System.out.println("\nAdj at rank " + rank + ":");
 		for (int i = 0; i < adjList.size(); i++) {
 			System.out.print("key: " + i + ", " + adjList.get(i).size() + " url(s): ");
 			for (int j = 0; j < adjList.get(i).size(); j++) {
@@ -145,17 +149,48 @@ public class MPJPageRankMain {
 		String inputArgs[] = MPI.Init(args);
 		int rank = MPI.COMM_WORLD.Rank();
 		int size = MPI.COMM_WORLD.Size();
-		System.out.println("Process " + rank + " of " + size + " processes");
+		// System.out.println("Process " + rank + " of " + size + " processes");
 
+		int numPages = 0;
+		MPJPageRankMain mpjPR = new MPJPageRankMain();
 		// decide what u want only in rank 0 n what in all nodes
 		if (rank == 0) {
-			MPJPageRankMain mpjPR = new MPJPageRankMain();
 			mpjPR.parseArgs(inputArgs);
-			mpjPR.display();
-			mpjPR.loadInput();
-//			mpjPR.calculatePageRank();
-//			mpjPR.printValues();
+			// mpjPR.display();
+			numPages = mpjPR.loadInput(rank);
+			// mpjPR.displayAdjList(rank);
+			// mpjPR.calculatePageRank();
+			// mpjPR.printValues();
 		}
+
+		int numOfPages[] = new int[1];
+		int localChunkSize = 0;
+		int localNumPages = 0;
+
+		// This assumes size of array is divisible by the number of processes.
+		// we need to distribute integral number to all other processes
+		// and remaining to process 0, so that we can cover uneven distributions
+
+		if (rank == 0) {
+			// first send each process the size that it should expect
+			numOfPages[0] = mpjPR.size;
+			for (int i = 1; i < size; i++) {
+				MPI.COMM_WORLD.Send(numOfPages, 0, 1, MPI.INT, i, 1);
+			}
+			// numPages = mpjPR.size;
+			localNumPages = numOfPages[0];
+			localChunkSize = localNumPages / size;
+		} else {
+			// receive the size of the array to expect
+			MPI.COMM_WORLD.Recv(numOfPages, 0, 1, MPI.INT, 0, 1);
+			localNumPages = numOfPages[0];
+			localChunkSize = localNumPages / size;
+		}
+
+		localChunkSize = numPages / size;
+		System.out.println("process " + rank + " localNumPages = " + localNumPages);
+		System.out.println("process " + rank + " localChunkSize = " + localChunkSize);
+		System.out.println("process " + rank + " size = " + size);
 
 		MPI.Finalize();
 
