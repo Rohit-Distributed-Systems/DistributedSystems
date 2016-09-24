@@ -2,10 +2,8 @@ package com.rohit.MPJPageRank;
 
 import java.io.*;
 import java.util.*;
-import mpi.*;
 
-public class MPJPageRankMain {
-
+public class SequentialPageRank {
 	// adjacency matrix read from file
 	private HashMap<Integer, ArrayList<Integer>> adjList = new HashMap<Integer, ArrayList<Integer>>();
 	// input file name
@@ -22,7 +20,14 @@ public class MPJPageRankMain {
 	// calculating rank values
 	private HashMap<Integer, Double> rankValues = new HashMap<Integer, Double>();
 
-	
+	/**
+	 * Parse the command line arguments and update the instance variables.
+	 * Command line arguments are of the form <input_file_name>
+	 * <output_file_name> <num_iters> <damp_factor>
+	 *
+	 * @param args
+	 *            arguments
+	 */
 	public void parseArgs(String[] args) {
 		inputFile = args[0];
 		outputFile = args[1];
@@ -30,7 +35,19 @@ public class MPJPageRankMain {
 		dampingFactor = Double.parseDouble(args[3]);
 	}
 
-	// Read the input from the file and populate the adjacency matrix
+	/**
+	 * Read the input from the file and populate the adjacency matrix
+	 *
+	 * The input is of type
+	 *
+	 * 0 1 2 2 1 3 0 1 4 1 3 5 5 1 4 6 1 4 7 1 4 8 1 4 9 4 10 4 The first value
+	 * in each line is a URL. Each value after the first value is the URLs
+	 * referred by the first URL. For example the page represented by the 0 URL
+	 * doesn't refer any other URL. Page represented by 1 refer the URL 2.
+	 *
+	 * @throws java.io.IOException
+	 *             if an error occurs
+	 */
 	public void loadInput() throws IOException {
 		System.out.println("\nRead " + inputFile);
 		try {
@@ -40,6 +57,7 @@ public class MPJPageRankMain {
 			int key = 0;
 			ArrayList<Integer> outLinks;
 
+			// assuming there's no missing key
 			Scanner in = new Scanner(new FileReader(inputFile));
 			String[] lineStringArray;
 			ArrayList<Integer> outLinksForDanglingPages = new ArrayList<Integer>();
@@ -47,6 +65,7 @@ public class MPJPageRankMain {
 			while (in.hasNextLine()) {
 				outLinks = new ArrayList<Integer>();
 				line = in.nextLine();
+				// To-do: implement split function to avoid the intermediate
 				lineStringArray = line.split(" ");
 
 				// handle non int exception
@@ -66,7 +85,7 @@ public class MPJPageRankMain {
 			in.close();
 			size = key;
 
-			// displayAdjList();
+//			displayAdjList();
 
 			for (int i = 0; i <= size; i++) {
 				if (adjList.get(i).size() == 0) {
@@ -82,43 +101,59 @@ public class MPJPageRankMain {
 		}
 	}
 
+	/**
+	 * Do fixed number of iterations and calculate the page rank values. You may
+	 * keep the intermediate page rank values in a hash table.
+	 */
 	public void calculatePageRank() {
+//		private HashMap<Integer, ArrayList<Integer>> adjList = new HashMap<Integer, ArrayList<Integer>>();
+//		private HashMap<Integer, Double> rankValues = new HashMap<Integer, Double>();
 		HashMap<Integer, Double> nextRankValues = new HashMap<Integer, Double>();
-
-		// initialize rank values
-		double avg = 1.0 / size;
-		for (int i = 0; i <= size; i++) {
+		
+		//initialize rank values
+		double avg = 1.0/size;
+		for(int i = 0; i <= size; i++){
 			rankValues.put(i, avg);
-			// nextRankValues.put(i, avg);
+//			nextRankValues.put(i, avg);
 		}
-		double constantFactor = (1 - dampingFactor) / size;
+		double constantFactor = (1-dampingFactor)/size;
 		double myRankContribution = 0.0;
+//		double rankContribution = 0.0;
 		ArrayList<Integer> outLinks;
-
-		while (iterations-- > 0) {
-			nextRankValues = (HashMap<Integer, Double>) rankValues.clone();
-			for (int i = 0; i <= size; i++) {
+		
+		while(iterations-- > 0){
+			nextRankValues = (HashMap<Integer, Double>)rankValues.clone();
+			for(int i = 0; i <= size; i++){
 				outLinks = adjList.get(i);
 				// My contribution towards each page
 				myRankContribution = rankValues.get(i) / outLinks.size();
-
-				for (int page : outLinks) {
+				
+				for(int page: outLinks){
+//					double temp = myRank + nextRankValues.get(page);
 					nextRankValues.replace(page, myRankContribution + nextRankValues.get(page));
 				}
 			}
-			for (int i = 0; i <= size; i++) {
+			for(int i = 0; i <= size; i++){
 				double rank = constantFactor + dampingFactor * rankValues.get(i);
 				rankValues.replace(i, rank);
 			}
+//			rankValues = (HashMap<Integer, Double>)nextRankValues.clone();
 			rankValues = nextRankValues;
-
+			
 		}
 	}
 
-	// Print top 10 pagerank values in descending order.
+	/**
+	 * Print the pagerank values. Before printing you should sort them according
+	 * to decreasing order. Print all the values to the output file. Print only
+	 * the first 10 values to console.
+	 *
+	 * @throws IOException
+	 *             if an error occurs
+	 */
 	public void printValues() throws IOException {
 		System.out.println("Ranks:");
-		for (int i = 0; i < size; i++) {
+		for(int i = 0; i < size;i++){
 			System.out.print(rankValues.get(i));
 		}
 	}
@@ -141,26 +176,15 @@ public class MPJPageRankMain {
 		}
 	}
 
-	public void calculatePageRankUsingMPJ(String[] args) {
-		MPI.Init(args);
-		int rank = MPI.COMM_WORLD.Rank();
-		int size = MPI.COMM_WORLD.Size();
-		System.out.println("Process " + rank + " of " + size + " processes");
-
-		MPI.Finalize();
-	}
 	public static void main(String[] args) throws IOException {
-		MPJPageRankMain mpjPR = new MPJPageRankMain();
-//		mpjPR.parseArgs(args);
-//		mpjPR.display();
-//
-//		mpjPR.loadInput();
-//		mpjPR.calculatePageRank();
-//		mpjPR.calculatePageRankUsingMPJ(args);
-//		mpjPR.printValues();
-		
-		
-		
+		SequentialPageRank sequentialPR = new SequentialPageRank();
+
+		sequentialPR.parseArgs(args);
+//		sequentialPR.display();
+
+		sequentialPR.loadInput();
+		sequentialPR.calculatePageRank();
+		sequentialPR.printValues();
 	}
 
 }
