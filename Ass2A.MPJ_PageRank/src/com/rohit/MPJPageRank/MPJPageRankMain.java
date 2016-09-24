@@ -143,6 +143,17 @@ public class MPJPageRankMain {
 			System.out.println();
 		}
 	}
+	
+	private static void displayHash(HashMap<Integer, ArrayList<Integer>> h, int rank) {
+		System.out.println("\nHash at rank " + rank + ":");
+		for (int i = 0; i < h.size(); i++) {
+			System.out.print("key: " + i + ", " + h.get(i).size() + " url(s): ");
+			for (int j = 0; j < h.get(i).size(); j++) {
+				System.out.print(h.get(i).get(j) + " ");
+			}
+			System.out.println();
+		}
+	}
 
 	public static void main(String[] args) throws IOException {
 		// Read command line args along with MPI initiation
@@ -177,7 +188,6 @@ public class MPJPageRankMain {
 			for (int i = 1; i < size; i++) {
 				MPI.COMM_WORLD.Send(numOfPages, 0, 1, MPI.INT, i, 1);
 			}
-			// numPages = mpjPR.size;
 			localNumPages = numOfPages[0];
 			localChunkSize = localNumPages / size;
 		} else {
@@ -188,9 +198,30 @@ public class MPJPageRankMain {
 		}
 
 		localChunkSize = numPages / size;
-		System.out.println("process " + rank + " localNumPages = " + localNumPages);
-		System.out.println("process " + rank + " localChunkSize = " + localChunkSize);
-		System.out.println("process " + rank + " size = " + size);
+
+		// testing
+		{
+			System.out.println("process " + rank + " localNumPages = " + localNumPages);
+			System.out.println("process " + rank + " localChunkSize = " + localChunkSize);
+			System.out.println("process " + rank + " size = " + size);
+		}
+
+		HashMap<Integer, ArrayList<Integer>> subAdjList = new HashMap<Integer, ArrayList<Integer>>();
+
+		if (rank == 0) {
+			// send adj list
+			for (int i = 1; i < size; i++) {
+				subAdjList = new HashMap<Integer, ArrayList<Integer>>();
+				for (int j = i * localChunkSize; j < i * localChunkSize + localChunkSize; j++) {
+					subAdjList.put(j, mpjPR.adjList.get(j));
+				}
+				MPI.COMM_WORLD.Send(subAdjList, 0, localChunkSize, MPI.OBJECT, i, 1);
+			}
+		} else {
+			MPI.COMM_WORLD.Recv(subAdjList, 0, localChunkSize, MPI.OBJECT, 0, 1);
+		}
+		
+		displayHash(subAdjList, rank);
 
 		MPI.Finalize();
 
