@@ -334,17 +334,12 @@ public class MPJPageRankMain {
 		double localRanks[] = new double[localNumPages];
 		localRanks = Arrays.copyOf(mpjPR.rankArray, localNumPages);
 
-		if (rank == 1) {
-			System.out.println(localNumPages);
-			display(localRanks, rank);
-		}
-		if (rank == 1) {
-			localRanks = calculateLocalRanks(localRanks, mpjPR);
-		}
-		if (rank == 1) {
-			System.out.println("after:");
-			display(localRanks, rank);
-		}
+		localRanks = calculateLocalRanks(localRanks, mpjPR);
+//		display(localRanks, rank);
+		
+		
+		// *** send locally calculated ranks back to parent process
+		
 
 		MPI.Finalize();
 
@@ -354,26 +349,27 @@ public class MPJPageRankMain {
 		double[] nextLocalRanks = new double[mpjPR.size];
 		double constantFactor = (1 - mpjPR.dampingFactor) / mpjPR.size;
 		double myRankContribution = 0.0;
-		// System.out.println(constantFactor);
-		// display(mpjPR.adjList, 1);
 		Iterator it = mpjPR.adjList.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry pair = (Map.Entry) it.next();
 			int pageNumber = (int) pair.getKey();
 			ArrayList<Integer> outLinks = mpjPR.adjList.get(pageNumber);
-			System.out.println(pageNumber + ": " + outLinks);
+			// System.out.println(pageNumber + ": " + outLinks);
 
 			myRankContribution = localRanks[pageNumber] / outLinks.size();
 
 			for (int page : outLinks) {
 				nextLocalRanks[page] = myRankContribution + nextLocalRanks[page];
-				// double temp = myRank + nextRankValues.get(page);
-				// nextRankValues.replace(page, myRankContribution +
-				// nextRankValues.get(page));
 			}
 
-			// System.out.println(pageNumber + " = " + pair.getValue());
 		}
+
+		for (int i = 0; i < mpjPR.size; i++) {
+			if (nextLocalRanks[i] > 0) {
+				nextLocalRanks[i] = constantFactor + mpjPR.dampingFactor * nextLocalRanks[i];
+			}
+		}
+
 		return nextLocalRanks;
 
 	}
