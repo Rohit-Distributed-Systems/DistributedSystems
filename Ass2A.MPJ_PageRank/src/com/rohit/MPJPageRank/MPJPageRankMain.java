@@ -187,7 +187,7 @@ public class MPJPageRankMain {
 			// send adj list
 			for (int processNumber = 1; processNumber < size; processNumber++) {
 				int pagesFrom = processNumber * remoteChunkSize;
-				if(localChunkSize - remoteChunkSize > 0) {
+				if (localChunkSize - remoteChunkSize > 0) {
 					pagesFrom += localChunkSize - remoteChunkSize;
 				}
 				int pagesTo = pagesFrom + remoteChunkSize;
@@ -197,44 +197,56 @@ public class MPJPageRankMain {
 				for (int page = pagesFrom; page < pagesTo; page++) {
 					int l = mpjPR.adjListOfStrings.get(page).length();
 					if (processNumber == 1) {
-//						System.out.println(mpjPR.adjListOfStrings.get(page).toCharArray());
-//						System.out.println("length = " + l);
+						// System.out.println(mpjPR.adjListOfStrings.get(page).toCharArray());
+						// System.out.println("length = " + l);
 					}
-					MPI.COMM_WORLD.Send(mpjPR.adjListOfStrings.get(page).toCharArray(), 0, l, MPI.CHAR,
-							processNumber, 1);
+					MPI.COMM_WORLD.Send(mpjPR.adjListOfStrings.get(page).toCharArray(), 0, l, MPI.CHAR, processNumber,
+							1);
 				}
 			}
-			 // remove all but <localchunksize> elements for rank 0 
+			// To-do: remove all but <localchunksize> elements for rank 0
+
 		} else {
 			// System.out.println(
 			// "accepting at process " + rank + ": pages " + 0 * remoteChunkSize
 			// + " to " + localChunkSize);
-			int len=0;
+			int len = 0;
 			for (int page = 0; page < localChunkSize; page++) {
 				char[] pageOutLinks = new char[localNumPages];
 				MPI.COMM_WORLD.Recv(pageOutLinks, 0, localNumPages, MPI.CHAR, 0, 1);
 				StringBuffer sb = new StringBuffer();
 				if (rank == 1) {
-//					System.out.println("len = " + pageOutLinks.length + " recv par3 = " + localChunkSize);
+					// System.out.println("len = " + pageOutLinks.length + "
+					// recv par3 = " + localChunkSize);
 				}
 				for (int i = 0; i < pageOutLinks.length; i++) {
 					if (rank == 1) {
-//						System.out.print(pageOutLinks[i]);
+						// System.out.print(pageOutLinks[i]);
 					}
 					sb.append(pageOutLinks[i]);
 				}
 				if (rank == 1) {
-//					 System.out.println("*** "+ sb);
+					// System.out.println("*** "+ sb);
 				}
 				mpjPR.adjListOfStrings.add(sb.toString());
 				// System.out.println(pageOutLinks.toString().charAt(0));
 			}
 		}
 
-		if (rank == 4) {
-			 mpjPR.display(mpjPR.adjListOfStrings, rank);
+		if (rank == 0) {
+			mpjPR.display(mpjPR.adjListOfStrings, rank);
 		}
+		
+		// To-do: dangling nodes
 
+		
+		if(rank == 0) {
+			// *********** generate rank array **********
+			
+		}
+		
+		
+		
 		MPI.Finalize();
 
 	}
