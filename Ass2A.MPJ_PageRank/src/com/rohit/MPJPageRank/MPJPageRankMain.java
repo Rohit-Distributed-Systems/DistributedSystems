@@ -156,6 +156,7 @@ public class MPJPageRankMain {
 		int numOfPages[] = new int[1];
 		int localChunkSize = 0;
 		int localNumPages = 0;
+		int remoteChunkSize = 0;
 
 		if (rank == 0) {
 			// first send each process the size that it should expect
@@ -164,8 +165,9 @@ public class MPJPageRankMain {
 				MPI.COMM_WORLD.Send(numOfPages, 0, 1, MPI.INT, i, 1);
 			}
 			localNumPages = mpjPR.size;
+			remoteChunkSize = mpjPR.size / size;
 			// process 0 takes up extra pages if unevenly divided
-			localChunkSize = mpjPR.size - mpjPR.size * (size - 1) / size;
+			localChunkSize = mpjPR.size - remoteChunkSize * (size - 1);
 		} else {
 			// receive the size of the array to expect
 			MPI.COMM_WORLD.Recv(numOfPages, 0, 1, MPI.INT, 0, 1);
@@ -175,28 +177,63 @@ public class MPJPageRankMain {
 
 		// testing
 		{
-			System.out.println("process " + rank + " localNumPages = " + localNumPages);
-			System.out.println("process " + rank + " localChunkSize = " + localChunkSize);
-//			System.out.println("process " + rank + " mpjPR.size = " + mpjPR.size);
+			// System.out.println("process " + rank + " localNumPages = " +
+			// localNumPages);
+			// System.out.println("process " + rank + " localChunkSize = " +
+			// localChunkSize);
 		}
 
-		HashMap<Integer, ArrayList<Integer>> subAdjList = new HashMap<Integer, ArrayList<Integer>>();
+		if (rank == 0) {
+			// send adj list
+			for (int processNumber = 1; processNumber < size; processNumber++) {
+				int pagesFrom = processNumber * remoteChunkSize;
+				if(localChunkSize - remoteChunkSize > 0) {
+					pagesFrom += localChunkSize - remoteChunkSize;
+				}
+				int pagesTo = pagesFrom + remoteChunkSize;
+				// System.out.println(
+				// "sending to process " + processNumber + ": pages " +
+				// pagesFrom + " to " + (pagesTo - 1));
+				for (int page = pagesFrom; page < pagesTo; page++) {
+					int l = mpjPR.adjListOfStrings.get(page).length();
+					if (processNumber == 1) {
+//						System.out.println(mpjPR.adjListOfStrings.get(page).toCharArray());
+//						System.out.println("length = " + l);
+					}
+					MPI.COMM_WORLD.Send(mpjPR.adjListOfStrings.get(page).toCharArray(), 0, l, MPI.CHAR,
+							processNumber, 1);
+				}
+			}
+			 // remove all but <localchunksize> elements for rank 0 
+		} else {
+			// System.out.println(
+			// "accepting at process " + rank + ": pages " + 0 * remoteChunkSize
+			// + " to " + localChunkSize);
+			int len=0;
+			for (int page = 0; page < localChunkSize; page++) {
+				char[] pageOutLinks = new char[localNumPages];
+				MPI.COMM_WORLD.Recv(pageOutLinks, 0, localNumPages, MPI.CHAR, 0, 1);
+				StringBuffer sb = new StringBuffer();
+				if (rank == 1) {
+//					System.out.println("len = " + pageOutLinks.length + " recv par3 = " + localChunkSize);
+				}
+				for (int i = 0; i < pageOutLinks.length; i++) {
+					if (rank == 1) {
+//						System.out.print(pageOutLinks[i]);
+					}
+					sb.append(pageOutLinks[i]);
+				}
+				if (rank == 1) {
+//					 System.out.println("*** "+ sb);
+				}
+				mpjPR.adjListOfStrings.add(sb.toString());
+				// System.out.println(pageOutLinks.toString().charAt(0));
+			}
+		}
 
-		// if (rank == 0) {
-		// // send adj list
-		// for (int i = 1; i < size; i++) {
-		// subAdjList = new HashMap<Integer, ArrayList<Integer>>();
-		// for (int j = i * localChunkSize; j < i * localChunkSize +
-		// localChunkSize; j++) {
-		// subAdjList.put(j, mpjPR.adjList.get(j));
-		// }
-		// MPI.COMM_WORLD.Send(subAdjList, 0, localChunkSize, MPI.OBJECT, i, 1);
-		// }
-		// } else {
-		// MPI.COMM_WORLD.Recv(subAdjList, 0, localChunkSize, MPI.OBJECT, 0, 1);
-		// }
-		//
-		// displayHash(subAdjList, rank);
+		if (rank == 4) {
+			 mpjPR.display(mpjPR.adjListOfStrings, rank);
+		}
 
 		MPI.Finalize();
 
