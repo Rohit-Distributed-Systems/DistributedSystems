@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Scanner;
 
 import mpi.MPI;
@@ -143,6 +145,24 @@ public class MPJPageRankMain {
 		}
 	}
 
+	private void display(HashMap<Integer, ArrayList<Integer>> adjList2, int rank) {
+		System.out.println("\nAdj at rank " + rank + ": size = " + adjList2.size());
+		Iterator it = adjList2.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			System.out.println(pair.getKey() + " = " + pair.getValue());
+			// it.remove(); // avoids a ConcurrentModificationException
+		}
+		for (int i = 0; i < adjList2.size(); i++) {
+			// System.out.print(i + ": ");
+
+			// for (int j = 0; j < adjList2.get(i).size(); j++) {
+			// System.out.print(adjList2.get(i).get(j) + " ");
+			// }
+			System.out.println();
+		}
+	}
+
 	public static void main(String[] args) throws IOException {
 		// Read command line args along with MPI initiation
 		String inputArgs[] = MPI.Init(args);
@@ -163,7 +183,21 @@ public class MPJPageRankMain {
 			// mpjPR.calculatePageRank();
 			// mpjPR.printValues();
 		}
-
+		
+		double d[] = new double[1];
+		if (rank == 0) {
+			// send the damping factor
+			d[0] = mpjPR.dampingFactor;
+			for (int i = 1; i < size; i++) {
+				MPI.COMM_WORLD.Send(d, 0, 1, MPI.DOUBLE, i, 1);
+			}
+		} else {
+			// receive the damping factor
+			MPI.COMM_WORLD.Recv(d, 0, 1, MPI.DOUBLE, 0, 1);
+			mpjPR.dampingFactor = d[0];
+		}
+		
+		
 		int numOfPages[] = new int[1];
 		int localChunkSize = 0;
 		int localNumPages = 0;
@@ -251,11 +285,11 @@ public class MPJPageRankMain {
 		// To-do: dangling nodes
 
 		// convert adjListOfStrings to adjList
-		// for (int i = 0; i < mpjPR.adjListOfStrings.size(); i++) {
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < mpjPR.adjListOfStrings.size(); i++) {
+			// for (int i = 0; i < 1; i++) {
 			String temp[] = mpjPR.adjListOfStrings.get(i).split(" ");
-			System.out.println("l:" + temp.length);
-			int key = Integer.parseInt(temp[0]);
+			// System.out.println("l:" + temp.length);
+			// int key = Integer.parseInt(temp[0]);
 			// System.out.println(key);
 			// this line
 			// System.out.println(temp[2].trim());
@@ -271,8 +305,9 @@ public class MPJPageRankMain {
 			}
 			mpjPR.adjList.put(Integer.parseInt(temp[0].trim()), outLinks);
 		}
-		mpjPR.display(mpjPR.adjListOfStrings, rank);
-
+		if (rank == 4) {
+			// mpjPR.display(mpjPR.adjList, rank);
+		}
 		if (rank == 0) {
 			// *********** generate rank array **********
 			// Each element is by default initialized to 0.0
@@ -298,9 +333,28 @@ public class MPJPageRankMain {
 		// *** at every process, update the local copy of rankArray
 		double localRanks[] = new double[mpjPR.size];
 		localRanks = Arrays.copyOf(mpjPR.rankArray, localNumPages);
-
+		if (rank == 1) {
+			System.out.println("before:");
+			display(localRanks, rank);
+		}
+		
+		calculateLocalRanks(localRanks);
+		
+		if(rank == 1) {
+			System.out.println("d = "+mpjPR.dampingFactor);
+		}
+		
+		if (rank == 1) {
+			System.out.println("after:");
+			display(localRanks, rank);
+		}
+		
 		MPI.Finalize();
 
+	}
+
+	private static void calculateLocalRanks(double[] localRanks) {
+		
 	}
 
 }
