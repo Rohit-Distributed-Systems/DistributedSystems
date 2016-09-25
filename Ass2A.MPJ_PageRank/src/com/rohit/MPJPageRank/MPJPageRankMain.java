@@ -38,7 +38,7 @@ public class MPJPageRankMain {
 
 	// Read the input from the file and populate the adjacency matrix
 	public int loadInput(int rank) throws IOException {
-		System.out.println("\nRead " + inputFile);
+		// System.out.println("\nRead " + inputFile);
 		try {
 			Scanner in = new Scanner(new FileReader(inputFile));
 
@@ -47,8 +47,6 @@ public class MPJPageRankMain {
 				adjListOfStrings.add(in.nextLine());
 			}
 			in.close();
-
-			display(adjListOfStrings, rank);
 
 		} catch (IOException e) {
 			System.out.println("Exception " + e + "\n\nStack Trace:");
@@ -146,53 +144,44 @@ public class MPJPageRankMain {
 		// decide what u want only in rank 0 n what in all nodes
 		if (rank == 0) {
 			mpjPR.parseArgs(inputArgs);
-			mpjPR.display();
+			// mpjPR.display();
 			numPages = mpjPR.loadInput(rank);
-			System.out.println("numPages = " + numPages);
+			// mpjPR.display(mpjPR.adjListOfStrings, rank);
+			// System.out.println("numPages = " + numPages);
 			// mpjPR.displayAdjList(rank);
 			// mpjPR.calculatePageRank();
 			// mpjPR.printValues();
 		}
 
-		// int numOfPages[] = new int[1];
-		// int localChunkSize = 0;
-		// int localNumPages = 0;
-		//
-		// // This assumes size of array is divisible by the number of
-		// processes.
-		// // we need to distribute integral number to all other processes
-		// // and remaining to process 0, so that we can cover uneven
-		// distributions
-		//
-		// if (rank == 0) {
-		// // first send each process the size that it should expect
-		// numOfPages[0] = mpjPR.size;
-		// for (int i = 1; i < size; i++) {
-		// MPI.COMM_WORLD.Send(numOfPages, 0, 1, MPI.INT, i, 1);
-		// }
-		// localNumPages = numOfPages[0];
-		// localChunkSize = localNumPages / size;
-		// } else {
-		// // receive the size of the array to expect
-		// MPI.COMM_WORLD.Recv(numOfPages, 0, 1, MPI.INT, 0, 1);
-		// localNumPages = numOfPages[0];
-		// localChunkSize = localNumPages / size;
-		// }
+		int numOfPages[] = new int[1];
+		int localChunkSize = 0;
+		int localNumPages = 0;
 
-		// localChunkSize = numPages / size;
-		//
-		// // testing
-		// {
-		// System.out.println("process " + rank + " localNumPages = " +
-		// localNumPages);
-		// System.out.println("process " + rank + " localChunkSize = " +
-		// localChunkSize);
-		// System.out.println("process " + rank + " size = " + size);
-		// }
-		//
-		// HashMap<Integer, ArrayList<Integer>> subAdjList = new
-		// HashMap<Integer, ArrayList<Integer>>();
-		//
+		if (rank == 0) {
+			// first send each process the size that it should expect
+			numOfPages[0] = mpjPR.size;
+			for (int i = 1; i < size; i++) {
+				MPI.COMM_WORLD.Send(numOfPages, 0, 1, MPI.INT, i, 1);
+			}
+			localNumPages = mpjPR.size;
+			// process 0 takes up extra pages if unevenly divided
+			localChunkSize = mpjPR.size - mpjPR.size * (size - 1) / size;
+		} else {
+			// receive the size of the array to expect
+			MPI.COMM_WORLD.Recv(numOfPages, 0, 1, MPI.INT, 0, 1);
+			localNumPages = numOfPages[0];
+			localChunkSize = localNumPages / size;
+		}
+
+		// testing
+		{
+			System.out.println("process " + rank + " localNumPages = " + localNumPages);
+			System.out.println("process " + rank + " localChunkSize = " + localChunkSize);
+//			System.out.println("process " + rank + " mpjPR.size = " + mpjPR.size);
+		}
+
+		HashMap<Integer, ArrayList<Integer>> subAdjList = new HashMap<Integer, ArrayList<Integer>>();
+
 		// if (rank == 0) {
 		// // send adj list
 		// for (int i = 1; i < size; i++) {
