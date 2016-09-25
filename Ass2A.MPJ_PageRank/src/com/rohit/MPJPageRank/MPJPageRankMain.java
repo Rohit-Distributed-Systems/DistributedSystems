@@ -10,6 +10,9 @@ import mpi.MPI;
 
 public class MPJPageRankMain {
 
+	// adjacency list read from file as a string/page
+	private ArrayList<String> adjListOfStrings = new ArrayList<String>();
+
 	// adjacency matrix read from file
 	private HashMap<Integer, ArrayList<Integer>> adjList = new HashMap<Integer, ArrayList<Integer>>();
 	// input file name
@@ -37,52 +40,28 @@ public class MPJPageRankMain {
 	public int loadInput(int rank) throws IOException {
 		System.out.println("\nRead " + inputFile);
 		try {
-			String line = "";
-
-			// 'key' is not necessary, but just for better readability
-			int key = 0;
-			ArrayList<Integer> outLinks;
-
 			Scanner in = new Scanner(new FileReader(inputFile));
-			String[] lineStringArray;
-			ArrayList<Integer> outLinksForDanglingPages = new ArrayList<Integer>();
 
 			while (in.hasNextLine()) {
-				outLinks = new ArrayList<Integer>();
-				line = in.nextLine();
-				lineStringArray = line.split(" ");
-
-				key = Integer.parseInt(lineStringArray[0]);
-				outLinksForDanglingPages.add(key);
-				if (lineStringArray.length > 0) {
-					for (int i = 1; i < lineStringArray.length; i++) {
-						outLinks.add(Integer.parseInt(lineStringArray[i]));
-					}
-				} else {
-					// Dangling page: handled after the loop
-					continue;
-				}
-
-				adjList.put(key, outLinks);
+				this.size++;
+				adjListOfStrings.add(in.nextLine());
 			}
 			in.close();
-			this.size = key;
 
-			// displayAdjList(rank);
-
-			for (int i = 0; i <= this.size; i++) {
-				if (adjList.get(i).size() == 0) {
-					adjList.replace(i, outLinksForDanglingPages);
-				}
-			}
-
-			// displayAdjList(rank);
+			display(adjListOfStrings, rank);
 
 		} catch (IOException e) {
 			System.out.println("Exception " + e + "\n\nStack Trace:");
 			e.printStackTrace();
 		}
 		return this.size;
+	}
+
+	private void display(ArrayList<String> adjListOfStrings2, int rank) {
+		System.out.println("\nAdj at rank " + rank + ":");
+		for (String s : adjListOfStrings2) {
+			System.out.println(s);
+		}
 	}
 
 	public void calculatePageRank() {
@@ -143,7 +122,7 @@ public class MPJPageRankMain {
 			System.out.println();
 		}
 	}
-	
+
 	private static void displayHash(HashMap<Integer, ArrayList<Integer>> h, int rank) {
 		System.out.println("\nHash at rank " + rank + ":");
 		for (int i = 0; i < h.size(); i++) {
@@ -167,61 +146,68 @@ public class MPJPageRankMain {
 		// decide what u want only in rank 0 n what in all nodes
 		if (rank == 0) {
 			mpjPR.parseArgs(inputArgs);
-			// mpjPR.display();
+			mpjPR.display();
 			numPages = mpjPR.loadInput(rank);
+			System.out.println("numPages = " + numPages);
 			// mpjPR.displayAdjList(rank);
 			// mpjPR.calculatePageRank();
 			// mpjPR.printValues();
 		}
 
-		int numOfPages[] = new int[1];
-		int localChunkSize = 0;
-		int localNumPages = 0;
+		// int numOfPages[] = new int[1];
+		// int localChunkSize = 0;
+		// int localNumPages = 0;
+		//
+		// // This assumes size of array is divisible by the number of
+		// processes.
+		// // we need to distribute integral number to all other processes
+		// // and remaining to process 0, so that we can cover uneven
+		// distributions
+		//
+		// if (rank == 0) {
+		// // first send each process the size that it should expect
+		// numOfPages[0] = mpjPR.size;
+		// for (int i = 1; i < size; i++) {
+		// MPI.COMM_WORLD.Send(numOfPages, 0, 1, MPI.INT, i, 1);
+		// }
+		// localNumPages = numOfPages[0];
+		// localChunkSize = localNumPages / size;
+		// } else {
+		// // receive the size of the array to expect
+		// MPI.COMM_WORLD.Recv(numOfPages, 0, 1, MPI.INT, 0, 1);
+		// localNumPages = numOfPages[0];
+		// localChunkSize = localNumPages / size;
+		// }
 
-		// This assumes size of array is divisible by the number of processes.
-		// we need to distribute integral number to all other processes
-		// and remaining to process 0, so that we can cover uneven distributions
-
-		if (rank == 0) {
-			// first send each process the size that it should expect
-			numOfPages[0] = mpjPR.size;
-			for (int i = 1; i < size; i++) {
-				MPI.COMM_WORLD.Send(numOfPages, 0, 1, MPI.INT, i, 1);
-			}
-			localNumPages = numOfPages[0];
-			localChunkSize = localNumPages / size;
-		} else {
-			// receive the size of the array to expect
-			MPI.COMM_WORLD.Recv(numOfPages, 0, 1, MPI.INT, 0, 1);
-			localNumPages = numOfPages[0];
-			localChunkSize = localNumPages / size;
-		}
-
-		localChunkSize = numPages / size;
-
-		// testing
-		{
-			System.out.println("process " + rank + " localNumPages = " + localNumPages);
-			System.out.println("process " + rank + " localChunkSize = " + localChunkSize);
-			System.out.println("process " + rank + " size = " + size);
-		}
-
-		HashMap<Integer, ArrayList<Integer>> subAdjList = new HashMap<Integer, ArrayList<Integer>>();
-
-		if (rank == 0) {
-			// send adj list
-			for (int i = 1; i < size; i++) {
-				subAdjList = new HashMap<Integer, ArrayList<Integer>>();
-				for (int j = i * localChunkSize; j < i * localChunkSize + localChunkSize; j++) {
-					subAdjList.put(j, mpjPR.adjList.get(j));
-				}
-				MPI.COMM_WORLD.Send(subAdjList, 0, localChunkSize, MPI.OBJECT, i, 1);
-			}
-		} else {
-			MPI.COMM_WORLD.Recv(subAdjList, 0, localChunkSize, MPI.OBJECT, 0, 1);
-		}
-		
-		displayHash(subAdjList, rank);
+		// localChunkSize = numPages / size;
+		//
+		// // testing
+		// {
+		// System.out.println("process " + rank + " localNumPages = " +
+		// localNumPages);
+		// System.out.println("process " + rank + " localChunkSize = " +
+		// localChunkSize);
+		// System.out.println("process " + rank + " size = " + size);
+		// }
+		//
+		// HashMap<Integer, ArrayList<Integer>> subAdjList = new
+		// HashMap<Integer, ArrayList<Integer>>();
+		//
+		// if (rank == 0) {
+		// // send adj list
+		// for (int i = 1; i < size; i++) {
+		// subAdjList = new HashMap<Integer, ArrayList<Integer>>();
+		// for (int j = i * localChunkSize; j < i * localChunkSize +
+		// localChunkSize; j++) {
+		// subAdjList.put(j, mpjPR.adjList.get(j));
+		// }
+		// MPI.COMM_WORLD.Send(subAdjList, 0, localChunkSize, MPI.OBJECT, i, 1);
+		// }
+		// } else {
+		// MPI.COMM_WORLD.Recv(subAdjList, 0, localChunkSize, MPI.OBJECT, 0, 1);
+		// }
+		//
+		// displayHash(subAdjList, rank);
 
 		MPI.Finalize();
 
