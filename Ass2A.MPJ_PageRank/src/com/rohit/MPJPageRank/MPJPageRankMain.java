@@ -335,11 +335,26 @@ public class MPJPageRankMain {
 		localRanks = Arrays.copyOf(mpjPR.rankArray, localNumPages);
 
 		localRanks = calculateLocalRanks(localRanks, mpjPR);
-//		display(localRanks, rank);
-		
-		
+		// display(localRanks, rank);
+
 		// *** send locally calculated ranks back to parent process
+		if (rank != 0) {
+			MPI.COMM_WORLD.Send(localRanks, 0, mpjPR.size, MPI.DOUBLE, 0, 1);
+		} else {
+			mpjPR.rankArray = new double[mpjPR.size];
+			double[] remoteLocalRanks = new double[mpjPR.size];
+			for (int processNumber = 1; processNumber < size; processNumber++) {
+				MPI.COMM_WORLD.Recv(remoteLocalRanks, 0, mpjPR.size, MPI.DOUBLE, processNumber, 1);
+				// aggregate ranks at parent process
+				for (int i = 0; i < mpjPR.size; i++) {
+					mpjPR.rankArray[i] += remoteLocalRanks[i];
+				}
+			}
+		}
 		
+		if(rank == 0) {
+			display(mpjPR.rankArray, rank);
+		}
 
 		MPI.Finalize();
 
