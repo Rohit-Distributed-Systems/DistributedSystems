@@ -253,6 +253,10 @@ public class MPJPageRankMain {
 			// *********** generate rank array **********
 			// Each element is by default initialized to 0.0
 			mpjPR.rankArray = new double[mpjPR.size];
+			double avg = 1.0 / mpjPR.size;
+			for(int i = 0; i < mpjPR.size; i++) {
+				mpjPR.rankArray[i] = avg;
+			}
 			// send rank array to all processes
 			for (int processNumber = 1; processNumber < size; processNumber++) {
 				MPI.COMM_WORLD.Send(mpjPR.rankArray, 0, mpjPR.size, MPI.DOUBLE, processNumber, 1);
@@ -263,9 +267,13 @@ public class MPJPageRankMain {
 			MPI.COMM_WORLD.Recv(mpjPR.rankArray, 0, localNumPages, MPI.DOUBLE, 0, 1);
 		}
 
-		if (rank == 0) {
-			display(mpjPR.rankArray, rank);
+		if (rank == 4) {
+			 display(mpjPR.rankArray, rank);
 		}
+
+		// *** at every process, update the local copy of rankArray
+		
+
 		MPI.Finalize();
 
 	}
