@@ -3,6 +3,7 @@ package com.rohit.MPJPageRank;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -249,12 +250,37 @@ public class MPJPageRankMain {
 
 		// To-do: dangling nodes
 
+		// convert adjListOfStrings to adjList
+		if (rank == 1) { // testing
+//			for (int i = 0; i < mpjPR.adjListOfStrings.size(); i++) {
+			for (int i = 0; i < 1; i++) {
+				String temp[] = mpjPR.adjListOfStrings.get(i).split(" ");
+				System.out.println("l:"+temp.length);
+				int key = Integer.parseInt(temp[0]);
+				System.out.println(key);
+		// this line
+				System.out.println(temp[2]);
+				key = Integer.parseInt(temp[2]);
+//				System.out.println(key);
+				
+//				ArrayList<Integer> outLinks = new ArrayList<Integer>();
+//				for (int j = 1; j < temp.length; j++) {
+////////					outLinks.add(Integer.parseInt(temp[j]));
+//					int t = Integer.parseInt(temp[j]);
+//					System.out.println(t);
+//////					System.out.print(temp[j]);
+//				}
+//				mpjPR.adjList.put(Integer.parseInt(temp[0]), outLinks);
+			}
+//			mpjPR.display(mpjPR.adjListOfStrings, rank);
+		}
+
 		if (rank == 0) {
 			// *********** generate rank array **********
 			// Each element is by default initialized to 0.0
 			mpjPR.rankArray = new double[mpjPR.size];
 			double avg = 1.0 / mpjPR.size;
-			for(int i = 0; i < mpjPR.size; i++) {
+			for (int i = 0; i < mpjPR.size; i++) {
 				mpjPR.rankArray[i] = avg;
 			}
 			// send rank array to all processes
@@ -268,11 +294,12 @@ public class MPJPageRankMain {
 		}
 
 		if (rank == 4) {
-			 display(mpjPR.rankArray, rank);
+			// display(mpjPR.rankArray, rank);
 		}
 
 		// *** at every process, update the local copy of rankArray
-		
+		double localRanks[] = new double[mpjPR.size];
+		localRanks = Arrays.copyOf(mpjPR.rankArray, localNumPages);
 
 		MPI.Finalize();
 
