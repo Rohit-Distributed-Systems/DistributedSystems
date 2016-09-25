@@ -29,6 +29,9 @@ public class MPJPageRankMain {
 	// calculating rank values
 	private HashMap<Integer, Double> rankValues = new HashMap<Integer, Double>();
 
+	// rank array
+	private double rankArray[];
+
 	public void parseArgs(String[] args) {
 		inputFile = args[0];
 		outputFile = args[1];
@@ -108,6 +111,13 @@ public class MPJPageRankMain {
 		System.out.println("output: " + outputFile);
 		System.out.println("iterations: " + iterations);
 		System.out.println("dampingFactor: " + dampingFactor);
+	}
+
+	private static void display(double[] a, int rank) {
+		System.out.println("pageranks at process " + rank + ": ");
+		for (int i = 0; i < a.length; i++) {
+			System.out.println(i + ": " + a[i]);
+		}
 	}
 
 	private void displayAdjList(int rank) {
@@ -234,19 +244,28 @@ public class MPJPageRankMain {
 		}
 
 		if (rank == 0) {
-			mpjPR.display(mpjPR.adjListOfStrings, rank);
+			// mpjPR.display(mpjPR.adjListOfStrings, rank);
 		}
-		
+
 		// To-do: dangling nodes
 
-		
-		if(rank == 0) {
+		if (rank == 0) {
 			// *********** generate rank array **********
-			
+			// Each element is by default initialized to 0.0
+			mpjPR.rankArray = new double[mpjPR.size];
+			// send rank array to all processes
+			for (int processNumber = 1; processNumber < size; processNumber++) {
+				MPI.COMM_WORLD.Send(mpjPR.rankArray, 0, mpjPR.size, MPI.DOUBLE, processNumber, 1);
+			}
+
+		} else {
+			mpjPR.rankArray = new double[localNumPages];
+			MPI.COMM_WORLD.Recv(mpjPR.rankArray, 0, localNumPages, MPI.DOUBLE, 0, 1);
 		}
-		
-		
-		
+
+		if (rank == 0) {
+			display(mpjPR.rankArray, rank);
+		}
 		MPI.Finalize();
 
 	}
