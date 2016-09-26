@@ -1,11 +1,17 @@
 package com.rohit.MPJPageRank;
 
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -103,9 +109,25 @@ public class MPJPageRankMain {
 
 	// Print top 10 pagerank values in descending order.
 	public void printValues() throws IOException {
-		System.out.println("Ranks:");
+		int ind[] = new int[size];
 		for (int i = 0; i < size; i++) {
-			System.out.print(rankValues.get(i));
+			ind[i] = i;
+		}
+		// rankArray
+		for (int i = 0; i < size; i++) {
+			for (int j = 1; j < size; j++) {
+				if (rankArray[j - 1] < rankArray[j]) {
+					double t = rankArray[j - 1];
+					rankArray[j - 1] = rankArray[j];
+					rankArray[j] = t;
+					int t2 = ind[j - 1];
+					ind[j - 1] = ind[j];
+					ind[j] = t2;
+				}
+			}
+		}
+		for (int i = 0; i < size; i++) {
+			System.out.println(ind[i] + ": " + rankArray[i]);
 		}
 	}
 
@@ -184,6 +206,7 @@ public class MPJPageRankMain {
 			// mpjPR.printValues();
 		}
 
+		// send damping factor
 		double d[] = new double[1];
 		if (rank == 0) {
 			// send the damping factor
@@ -195,6 +218,20 @@ public class MPJPageRankMain {
 			// receive the damping factor
 			MPI.COMM_WORLD.Recv(d, 0, 1, MPI.DOUBLE, 0, 1);
 			mpjPR.dampingFactor = d[0];
+		}
+
+		// send number of iterations
+		int its[] = new int[1];
+		if (rank == 0) {
+			// send the number of iterations
+			its[0] = mpjPR.iterations;
+			for (int i = 1; i < size; i++) {
+				MPI.COMM_WORLD.Send(its, 0, 1, MPI.INT, i, 1);
+			}
+		} else {
+			// receive the damping factor
+			MPI.COMM_WORLD.Recv(its, 0, 1, MPI.INT, 0, 1);
+			mpjPR.iterations = its[0];
 		}
 
 		int numOfPages[] = new int[1];
@@ -320,59 +357,78 @@ public class MPJPageRankMain {
 			mpjPR.adjList.put(Integer.parseInt(temp[0].trim()), outLinks);
 		}
 
-		if (rank == 0) {
-			// *********** generate rank array **********
-			// Each element is by default initialized to 0.0
-			mpjPR.rankArray = new double[mpjPR.size];
-			double avg = 1.0 / mpjPR.size;
-			for (int i = 0; i < mpjPR.size; i++) {
-				mpjPR.rankArray[i] = avg;
+		boolean firstRun = true;
+
+		// if (rank == 0) {
+		// boolean firstRun = true;
+		// mpjPR.iterations = 10;
+		// System.out.println("its at " + rank + " = " + mpjPR.iterations);
+		while (mpjPR.iterations-- > 0) {
+			// System.out.println("iteration " + mpjPR.iterations + " at process
+			// " + rank);
+			if (rank == 0) {
+				// *********** generate rank array **********
+				if (firstRun) {
+					firstRun = false;
+					mpjPR.rankArray = new double[mpjPR.size];
+					double avg = 1.0 / mpjPR.size;
+					for (int i = 0; i < mpjPR.size; i++) {
+						mpjPR.rankArray[i] = avg;
+					}
+				}
+				// send rank array to all processes
+				for (int processNumber = 1; processNumber < size; processNumber++) {
+					MPI.COMM_WORLD.Send(mpjPR.rankArray, 0, mpjPR.size, MPI.DOUBLE, processNumber, 1);
+				}
+
+			} else {
+				mpjPR.rankArray = new double[localNumPages];
+				MPI.COMM_WORLD.Recv(mpjPR.rankArray, 0, localNumPages, MPI.DOUBLE, 0, 1);
 			}
-			// send rank array to all processes
-			for (int processNumber = 1; processNumber < size; processNumber++) {
-				MPI.COMM_WORLD.Send(mpjPR.rankArray, 0, mpjPR.size, MPI.DOUBLE, processNumber, 1);
-			}
 
-		} else {
-			mpjPR.rankArray = new double[localNumPages];
-			MPI.COMM_WORLD.Recv(mpjPR.rankArray, 0, localNumPages, MPI.DOUBLE, 0, 1);
-		}
+			// *** at every process, update the local copy of rankArray
+			mpjPR.size = localNumPages; // do this up
+			double localRanks[] = new double[localNumPages];
+			localRanks = Arrays.copyOf(mpjPR.rankArray, localNumPages);
 
-		if (rank == 4) {
-			// display(mpjPR.rankArray, rank);
-		}
+			localRanks = calculateLocalRanks(localRanks, mpjPR);
+			// display(localRanks, rank);
 
-		// *** at every process, update the local copy of rankArray
-		mpjPR.size = localNumPages; // do this up
-		double localRanks[] = new double[localNumPages];
-		localRanks = Arrays.copyOf(mpjPR.rankArray, localNumPages);
-
-		localRanks = calculateLocalRanks(localRanks, mpjPR);
-		// display(localRanks, rank);
-
-		// *** send locally calculated ranks back to parent process
-		if (rank != 0) {
-			MPI.COMM_WORLD.Send(localRanks, 0, mpjPR.size, MPI.DOUBLE, 0, 1);
-		} else {
-			mpjPR.rankArray = new double[mpjPR.size];
-			double[] remoteLocalRanks = new double[mpjPR.size];
-			for (int processNumber = 1; processNumber < size; processNumber++) {
-				MPI.COMM_WORLD.Recv(remoteLocalRanks, 0, mpjPR.size, MPI.DOUBLE, processNumber, 1);
-				// aggregate ranks at parent process
+			// *** send locally calculated ranks back to parent process
+			if (rank != 0) {
+				MPI.COMM_WORLD.Send(localRanks, 0, mpjPR.size, MPI.DOUBLE, 0, 1);
+			} else {
+				mpjPR.rankArray = new double[mpjPR.size];
+				double[] remoteLocalRanks = new double[mpjPR.size];
+				for (int processNumber = 1; processNumber < size; processNumber++) {
+					MPI.COMM_WORLD.Recv(remoteLocalRanks, 0, mpjPR.size, MPI.DOUBLE, processNumber, 1);
+					// aggregate ranks at parent process
+					for (int i = 0; i < mpjPR.size; i++) {
+						mpjPR.rankArray[i] += remoteLocalRanks[i];
+					}
+				}
+				// update parent process's values to rankArray
 				for (int i = 0; i < mpjPR.size; i++) {
-					mpjPR.rankArray[i] += remoteLocalRanks[i];
+					mpjPR.rankArray[i] += localRanks[i];
 				}
 			}
-			// update parent process's values to rankArray
-			for (int i = 0; i < mpjPR.size; i++) {
-				mpjPR.rankArray[i] += localRanks[i];
+			if (rank == 0) {
+				// display(mpjPR.rankArray, rank);
 			}
-		}
+		} // while
+			// }//if
 
 		if (rank == 0) {
-			display(mpjPR.rankArray, rank);
-		}
+			// display(mpjPR.rankArray, rank);
+			//
+			// double sum = 0.0;
+			// for (int i = 0; i < mpjPR.size; i++) {
+			// sum += mpjPR.rankArray[i];
+			// }
+			// System.out.println("sum = " + sum);
 
+			mpjPR.printValues();
+		}
 		MPI.Finalize();
 
 	}
