@@ -61,7 +61,7 @@ public class MPJPageRankMain {
 		return this.size;
 	}
 
-	private void display(ArrayList<String> adjListOfStrings2, int rank) {
+	private static void display(ArrayList<String> adjListOfStrings2, int rank) {
 		System.out.println("\nAdj at rank " + rank + ":");
 		for (String s : adjListOfStrings2) {
 			System.out.println(s);
@@ -248,7 +248,14 @@ public class MPJPageRankMain {
 							1);
 				}
 			}
-			// To-do: remove all but <localchunksize> elements for rank 0
+			// done distributing the adj list, remove all but <localchunksize>
+			// elements for rank 0
+			ArrayList<String> tempAdjStrings = new ArrayList<String>();
+			for (int i = 0; i < localChunkSize; i++) {
+				tempAdjStrings.add(mpjPR.adjListOfStrings.get(i));
+			}
+			mpjPR.adjListOfStrings = tempAdjStrings;
+			display(mpjPR.adjListOfStrings, rank);
 
 		} else {
 			// System.out.println(
@@ -304,9 +311,7 @@ public class MPJPageRankMain {
 			}
 			mpjPR.adjList.put(Integer.parseInt(temp[0].trim()), outLinks);
 		}
-		if (rank == 4) {
-			// mpjPR.display(mpjPR.adjList, rank);
-		}
+
 		if (rank == 0) {
 			// *********** generate rank array **********
 			// Each element is by default initialized to 0.0
@@ -351,9 +356,9 @@ public class MPJPageRankMain {
 				}
 			}
 		}
-		
-		if(rank == 0) {
-			display(mpjPR.rankArray, rank);
+
+		if (rank == 0) {
+			// display(mpjPR.rankArray, rank);
 		}
 
 		MPI.Finalize();
