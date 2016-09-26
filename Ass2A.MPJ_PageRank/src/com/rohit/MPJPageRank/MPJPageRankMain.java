@@ -219,14 +219,6 @@ public class MPJPageRankMain {
 			localChunkSize = localNumPages / size;
 		}
 
-		// testing
-		{
-			// System.out.println("process " + rank + " localNumPages = " +
-			// localNumPages);
-			// System.out.println("process " + rank + " localChunkSize = " +
-			// localChunkSize);
-		}
-
 		if (rank == 0) {
 			// send adj list
 			for (int processNumber = 1; processNumber < size; processNumber++) {
@@ -255,7 +247,7 @@ public class MPJPageRankMain {
 				tempAdjStrings.add(mpjPR.adjListOfStrings.get(i));
 			}
 			mpjPR.adjListOfStrings = tempAdjStrings;
-			display(mpjPR.adjListOfStrings, rank);
+			// display(mpjPR.adjListOfStrings, rank);
 
 		} else {
 			// System.out.println(
@@ -289,6 +281,22 @@ public class MPJPageRankMain {
 		}
 
 		// To-do: dangling nodes
+		// display(mpjPR.adjListOfStrings, rank);
+
+		// prepare the all pages string
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < mpjPR.size; i++) {
+			sb.append(" " + i);
+		}
+
+		// append to danglings
+		for (int i = 0; i < mpjPR.adjListOfStrings.size(); i++) {
+			if (mpjPR.adjListOfStrings.get(i).length() < 2) {
+				// System.out.println(mpjPR.adjListOfStrings.get(i) + " is
+				// dangling at process " + rank);
+				mpjPR.adjListOfStrings.set(i, mpjPR.adjListOfStrings.get(i) + sb);
+			}
+		}
 
 		// convert adjListOfStrings to adjList
 		for (int i = 0; i < mpjPR.adjListOfStrings.size(); i++) {
@@ -355,10 +363,14 @@ public class MPJPageRankMain {
 					mpjPR.rankArray[i] += remoteLocalRanks[i];
 				}
 			}
+			// update parent process's values to rankArray
+			for (int i = 0; i < mpjPR.size; i++) {
+				mpjPR.rankArray[i] += localRanks[i];
+			}
 		}
 
 		if (rank == 0) {
-			// display(mpjPR.rankArray, rank);
+			display(mpjPR.rankArray, rank);
 		}
 
 		MPI.Finalize();
