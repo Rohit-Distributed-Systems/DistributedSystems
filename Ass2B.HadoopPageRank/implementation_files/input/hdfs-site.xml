@@ -1,0 +1,14 @@
+<configuration>
+	<property>
+		<name>dfs.replication</name>
+		<value>1</value>
+	</property>
+	<property>
+		<name>dfs.namenode.http-address</name>
+		<value>localhost:50070</value>
+	</property>
+	<property>
+		<name>dfs.namenode.secondary.http-address</name>
+		<value>localhost:50190</value>
+	</property>
+</configuration>

@@ -1,0 +1,50 @@
+<configuration>
+	<property>
+		<name>yarn.resourcemanager.hostname</name>
+		<value>localhost</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.address</name>
+		<value>localhost:8132</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.scheduler.address</name>
+		<value>localhost:8130</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.resource-tracker.address</name>
+		<value>localhost:8131</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.admin.address</name>
+		<value>localhost:8133</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.webapp.address</name>
+		<value>localhost:8080</value>
+	</property>
+	<property>
+		<name>yarn.nodemanager.aux-services</name>
+		<value>mapreduce_shuffle</value>
+	</property>
+	<!--check the memory sized under the node manager -->
+	<property>
+		<name>yarn.nodemanager.resource.memory-mb</name>
+		<value>4096</value>
+	</property>
+	<!--no memory checking-->
+	<property>
+		<description>Whether virtual memory limits will be enforced for containers.</description>
+		<name>yarn.nodemanager.vmem-check-enabled</name>
+		<value>false</value>
+	</property>
+	<!--set the min and max container allocation-->
+	<property>
+		<name>yarn.scheduler.minimum-allocation-mb</name>
+		<value>512</value>
+	</property>
+	<property>
+		<name>yarn.scheduler.maximum-allocation-mb</name>
+		<value>2048</value>
+	</property>
+</configuration>
