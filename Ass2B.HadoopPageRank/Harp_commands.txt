@@ -1,0 +1,73 @@
+Harp commands:
+
+source ~/.bashrc 
+
+1.
+hdfs namenode -format
+
+2.
+/Users/rohit/software/hadoop-2.6.0/sbin/start-dfs.sh 
+
+3.
+jps
+
+4.
+/Users/rohit/software/hadoop-2.6.0/sbin/start-yarn.sh
+
+5.jps
+jps
+
+Example:
+1. hdfs dfs ‐mkdir ‐p .
+
+
+2.
+hdfs dfs -put $HADOOP_HOME/etc/hadoop/* input
+
+3.
+hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.6.0.jar grep input output 'hadoop'
+
+4.
+hdfs dfs -cat output/*
+or
+//copy to local
+hdfs dfs -get output output
+
+
+Stop Hadoop Daemons:
+/Users/rohit/software/hadoop-2.6.0/sbin/stop-dfs.sh
+/Users/rohit/software/hadoop-2.6.0/sbin/stop-yarn.sh
+
+
+HARP CMDS:
+1.
+cd $HARP3_HOME
+ant
+
+2.
+a)
+cp $HARP3_HOME/lib/harp-0.3.0-hadoop-2.6.0.jar $HADOOP_HOME/share/hadoop/mapreduce
+cp $HARP3_HOME/lib/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce
+
+b)
+vim $HADOOP_HOME/etc/hadoop/mapred-site.xml
+	<!-- set map-collective container memory size -->
+	<property>
+		<name>mapreduce.map.collective.memory.mb</name>
+		<value>512</value>
+	</property>
+	<property>
+		<name>mapreduce.map.collective.java.opts</name>
+		<value>-Xmx256m -Xms256m</value>
+	</property>
+
+
+// dont know where to use this
+// To develop Harp applications, remember to add the following property in job configuration:
+jobConf.set("mapreduce.framework.name", "map-­‐collective");
+
+
+
+Example: (Kmeans):
+cp $HARP3_PROJECT_HOME/harp3-app/example/harp3-app-hadoop-2.6.0-kmeans.jar $HADOOP_HOME
+
