@@ -71,3 +71,7 @@ jobConf.set("mapreduce.framework.name", "map-­‐collective");
 Example: (Kmeans):
 cp $HARP3_PROJECT_HOME/harp3-app/example/harp3-app-hadoop-2.6.0-kmeans.jar $HADOOP_HOME
 
+hadoop jar harp3-app-hadoop-2.6.0-kmeans.jar edu.iu.kmeans.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+
+// fetch results:
+hdfs dfs -ls
